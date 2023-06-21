@@ -2,9 +2,11 @@ let login_json = location.hash.substring(1) || "/auth/login_json";
 
 async function init() {
     let result = await fetch(login_json).then(r=>r.json());
+    console.log(result);
 
     if(Object.keys(result).length < 2) {
-        location.href = Object.values(result)[0];
+        // location.href = Object.values(result)[0];
+        console.log(Object.values(result)[0]);
         return;
     }
 

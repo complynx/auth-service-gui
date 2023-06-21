@@ -2,6 +2,8 @@ let login_json = location.hash.substring(1) || "/auth/teelgram_auth/login_json";
 
 async function init() {
     let result = await fetch(login_json).then(r=>r.json());
+    console.log(result);
+    return;
 
     let script = document.createElement("script");
     script.async = true;
@@ -10,7 +12,7 @@ async function init() {
     script.dataset.authUrl = result.url;
     script.dataset.requestAccess = "write";
     script.src = "https://telegram.org/js/telegram-widget.js?22";
-    
+
     document.getElementById("container").appendChild(script);
 }
 
