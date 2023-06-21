@@ -6,8 +6,8 @@ async function init() {
     if(!result.plugins)
         throw "no plugins in the result";
 
-    if(Object.keys(result.plugins).length < 2) {
-        location.href = Object.values(result)[0];
+    if(Object.keys(result.plugins).length == 1) {
+        location.href = Object.values(result.plugins)[0];
         return;
     }
 
