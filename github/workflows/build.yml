@@ -1,0 +1,17 @@
+name: Dispatch event
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch event to server
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.SERVER_REPO_TOKEN }}
+          repository: complynx/server_configs
+          event-type: updated-${{ github.event.repository.name }}
