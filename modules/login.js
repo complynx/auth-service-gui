@@ -6,11 +6,10 @@ async function init() {
     if(!result.plugins)
         throw "no plugins in the result";
 
-    if(Object.keys(result.plugins).length < 2) {
-        // location.href = Object.values(result)[0];
-        console.log(Object.values(result.plugins)[0]);
-        return;
-    }
+    // if(Object.keys(result.plugins).length < 2) {
+    //     location.href = Object.values(result)[0];
+    //     return;
+    // }
 
     let list = document.getElementById("login_list");
     for(let plugin_name in result.plugins) {
