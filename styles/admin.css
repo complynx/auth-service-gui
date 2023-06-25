@@ -1,0 +1,178 @@
+@charset "UTF-8";
+
+:root {
+    font-family: sans-serif;
+}
+
+input[name=menu_btn],
+input[name=menu_btn]+div,
+.hidden {
+    display: none;
+}
+
+input[name=menu_btn]:checked+div {
+    display: block;
+}
+
+nav {
+    display: flex;
+    width: 80vw;
+    margin: 1em auto;
+    justify-content: space-evenly;
+    user-select: none;
+}
+
+nav label {
+    cursor: pointer;
+    color: #888;
+}
+
+nav label:hover {
+    color: #000;
+}
+
+main {
+    width: 90%;
+    margin: 1em auto;
+}
+
+main>div {
+    height: calc(100vh - 5em);
+    overflow-y: auto;
+}
+
+main>div>input[name=name] {
+    max-width: 17em;
+    width: 25%;
+}
+
+main>div>input[name=description] {
+    max-width: 60em;
+    width: 65%;
+}
+
+main>div>button.create {
+    width: 5em;
+    margin-bottom: .7em;
+}
+
+main>div>.user,
+main>div>.roles>div,
+main>div>.permissions>div {
+    color: #444;
+    cursor: pointer;
+    user-select: none;
+}
+
+main>div>.user:hover,
+main>div>.roles>div:hover,
+main>div>.permissions>div:hover {
+    color: #000;
+}
+
+dialog {
+    padding: 1em;
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+}
+
+dialog input[name=role_filter] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+dialog div.roles {
+    margin: .5em 0;
+    max-width: 100%;
+    max-height: calc(90vh - 4.5em);
+    overflow: auto;
+    user-select: none;
+}
+
+dialog div.roles .role_row {
+    display: flex;
+    width: 100%;
+    align-items: flex-end;
+}
+
+dialog div.roles .role_row>label {
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+dialog div.roles .role_row>label>input {
+    float: right;
+}
+
+dialog div.roles .role_row>input {
+    flex-grow: 0;
+}
+
+.role-repr>.role-id,
+.user-repr>.user-id,
+.permission-repr>.permission-id {
+    font-family: monospace;
+    opacity: .7;
+    color: #88f;
+    font-size: .7em;
+}
+
+.role-repr>.role-description,
+.permission-repr>.permission-description {
+    font-size: .95em;
+}
+
+.role-repr>.role-description:not(:empty)::before,
+.permission-repr>.permission-description:not(:empty)::before {
+    content: "— ";
+}
+
+.role-repr>.role-name,
+.user-repr>.user-outer-id,
+.permission-repr>.permission-name {
+    font-size: 1.2em;
+    font-family: monospace;
+    color: #668;
+}
+
+dialog.role>input[name=name] {
+    width: 25%;
+    margin-right: .1em;
+    box-sizing: border-box;
+    margin-bottom: .5em;
+}
+
+dialog.role>input[name=description] {
+    width: calc(75% - .6em);
+    margin-left: .1em;
+    box-sizing: border-box;
+}
+
+dialog.role>input[name=permission_filter] {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+dialog.role>.permissions {
+    margin: .5em 0;
+    max-height: calc(90vh - 7em);
+    overflow: auto;
+}
+
+dialog.role>.permissions>label {
+    display: block;
+}
+
+dialog.permission>.name {
+    font-family: monospace;
+    font-size: 1.2em;
+    display: block;
+}
+
+dialog.permission>input {
+    width: 100%;
+    min-width: 30vw;
+    box-sizing: border-box;
+    margin: 0.5em 0;
+}

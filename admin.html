@@ -3,7 +3,32 @@
     <head>
         <title>Admin panel</title>
         <script type="module" src="modules/admin.js"></script>
+        <link rel="stylesheet" href="styles/admin.css">
     </head>
     <body>
+        <nav>
+            <label for="menu_btn_users">Users</label>
+            <label for="menu_btn_roles">Roles</label>
+            <label for="menu_btn_permissions">Permissions</label>
+        </nav>
+        <main>
+            <input id="menu_btn_users" type="radio" name="menu_btn" value="users" checked>
+            <div></div>
+            <input id="menu_btn_roles" type="radio" name="menu_btn" value="roles">
+            <div>
+                <input type="text" name="name" placeholder="Name">
+                <input type="text" name="description" placeholder="Description">
+                <button class="create">Create</button>
+                <div class="roles"></div>
+            </div>
+            <input id="menu_btn_permissions" type="radio" name="menu_btn" value="permissions">
+            <div>
+                <input type="text" name="name" placeholder="Name">
+                <input type="text" name="description" placeholder="Description">
+                <button class="create">Create</button>
+                <div class="permissions"></div>
+            </div>
+        </main>
+        <dialog></dialog>
     </body>
 </html>
