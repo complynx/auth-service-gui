@@ -1,11 +1,23 @@
 let base = "/auth"
 
+function parse_response(r) {
+    if(!r.ok) {
+        if(r.status === 401 || r.status === 403) {
+            if(confirm(`${r.statusText}. Redirect to login page?`)) {
+                location.reload();
+            }
+        }
+        throw new Error(r.status + " " + r.statusText);
+    }
+    return r.json();
+}
+
 async function method_get_users() {
-    return await fetch(`${base}/adm/users`, { cache: "no-store" }).then(r=>r.json());
+    return await fetch(`${base}/adm/users`, { cache: "no-store" }).then(parse_response);
 }
 
 async function method_get_user_roles(id) {
-    return await fetch(`${base}/adm/user/${id}/roles`, { cache: "no-store" }).then(r=>r.json());
+    return await fetch(`${base}/adm/user/${id}/roles`, { cache: "no-store" }).then(parse_response);
 }
 
 async function method_change_user_roles(id, roles_change) {
@@ -15,15 +27,15 @@ async function method_change_user_roles(id, roles_change) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(roles_change),
-    }).then(r=>r.json());
+    }).then(parse_response);
 }
 
 async function method_get_roles() {
-    return await fetch(`${base}/adm/roles`, { cache: "no-store" }).then(r=>r.json());
+    return await fetch(`${base}/adm/roles`, { cache: "no-store" }).then(parse_response);
 }
 
 async function method_get_role(id) {
-    return await fetch(`${base}/adm/role/${id}`, { cache: "no-store" }).then(r=>r.json());
+    return await fetch(`${base}/adm/role/${id}`, { cache: "no-store" }).then(parse_response);
 }
 
 async function method_edit_role(id, description) {
@@ -33,7 +45,7 @@ async function method_edit_role(id, description) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(description),
-    }).then(r=>r.json());
+    }).then(parse_response);
 }
 
 async function method_create_role(description) {
@@ -43,11 +55,11 @@ async function method_create_role(description) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(description),
-    }).then(r=>r.json());
+    }).then(parse_response);
 }
 
 async function method_get_role_permissions(id) {
-    return await fetch(`${base}/adm/role/${id}/permissions`, { cache: "no-store" }).then(r=>r.json());
+    return await fetch(`${base}/adm/role/${id}/permissions`, { cache: "no-store" }).then(parse_response);
 }
 
 async function method_change_role_permissions(id, permissions_change) {
@@ -57,15 +69,15 @@ async function method_change_role_permissions(id, permissions_change) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(permissions_change),
-    }).then(r=>r.json());
+    }).then(parse_response);
 }
 
 async function method_get_permissions() {
-    return await fetch(`${base}/adm/permissions`, { cache: "no-store" }).then(r=>r.json());
+    return await fetch(`${base}/adm/permissions`, { cache: "no-store" }).then(parse_response);
 }
 
 async function method_get_permission(id) {
-    return await fetch(`${base}/adm/permission/${id}`, { cache: "no-store" }).then(r=>r.json());
+    return await fetch(`${base}/adm/permission/${id}`, { cache: "no-store" }).then(parse_response);
 }
 
 async function method_edit_permission(id, permission) {
@@ -75,7 +87,7 @@ async function method_edit_permission(id, permission) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(permission),
-    }).then(r=>r.json());
+    }).then(parse_response);
 }
 
 async function method_create_permission(permission) {
@@ -85,11 +97,11 @@ async function method_create_permission(permission) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(permission),
-    }).then(r=>r.json());
+    }).then(parse_response);
 }
 
 async function method_get_self() {
-    return await fetch(`${base}/adm/self`, { cache: "no-store" }).then(r=>r.json());
+    return await fetch(`${base}/adm/self`, { cache: "no-store" }).then(parse_response);
 }
 
 let escaper = document.createElement('div');
@@ -579,11 +591,9 @@ let main_container = document.querySelector("main");
 let fill_roles_promise;
 Promise.all([
     fill_roles(),
-    User.get_self()
-])
-User.get_self().then(u=>{
-    Self=u;
-    u.get_roles()
+    User.get_self().then(u=>Self=u)
+]).then(u=>{
+    Self.get_roles()
 }).catch(console.error);
 
 async function fill_users() {
