@@ -70,19 +70,19 @@ main>div>.permissions>div:hover {
     color: #000;
 }
 
-dialog {
+body>dialog {
     padding: 1em;
     max-width: 90%;
     max-height: 90%;
     position: relative;
 }
 
-dialog input[name=role_filter] {
+body>dialog input[name=role_filter] {
     width: 100%;
     box-sizing: border-box;
 }
 
-dialog div.roles {
+body>dialog div.roles {
     margin: .5em 0;
     max-width: 100%;
     max-height: calc(90vh - 4.5em);
@@ -90,22 +90,22 @@ dialog div.roles {
     user-select: none;
 }
 
-dialog div.roles .role_row {
+body>dialog div.roles .role_row {
     display: flex;
     width: 100%;
     align-items: flex-end;
 }
 
-dialog div.roles .role_row>label {
+body>dialog div.roles .role_row>label {
     flex-grow: 1;
     cursor: pointer;
 }
 
-dialog div.roles .role_row>label>input {
+body>dialog div.roles .role_row>label>input {
     float: right;
 }
 
-dialog div.roles .role_row>input {
+body>dialog div.roles .role_row>input {
     flex-grow: 0;
 }
 
@@ -136,43 +136,59 @@ dialog div.roles .role_row>input {
     color: #668;
 }
 
-dialog.role>input[name=name] {
+body>dialog.role>input[name=name] {
     width: 25%;
     margin-right: .1em;
     box-sizing: border-box;
     margin-bottom: .5em;
 }
 
-dialog.role>input[name=description] {
+body>dialog.role>input[name=description] {
     width: calc(75% - .6em);
     margin-left: .1em;
     box-sizing: border-box;
 }
 
-dialog.role>input[name=permission_filter] {
+body>dialog.role>input[name=permission_filter] {
     box-sizing: border-box;
     width: 100%;
 }
 
-dialog.role>.permissions {
+body>dialog.role>.permissions {
     margin: .5em 0;
     max-height: calc(90vh - 7em);
     overflow: auto;
 }
 
-dialog.role>.permissions>label {
+body>dialog.role>.permissions>label {
     display: block;
 }
 
-dialog.permission>.name {
-    font-family: monospace;
-    font-size: 1.2em;
-    display: block;
+body>dialog.permission>input[name=name] {
+    width: 30%;
+    box-sizing: border-box;
 }
 
-dialog.permission>input {
-    width: 100%;
-    min-width: 30vw;
+body>dialog.permission>input[name=description] {
+    width: calc(70% - .4em);
     box-sizing: border-box;
     margin: 0.5em 0;
+}
+
+body>dialog.permission>.roles input {
+    float: right;
+}
+
+body>dialog.permission {
+    min-width: 25em;
+}
+
+.role .sub-dialog {
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.role .sub-dialog>.sub-container{
+    max-height: calc(90vh - 2em);
+    overflow: auto;
 }

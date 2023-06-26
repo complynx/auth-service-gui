@@ -1,15 +1,28 @@
 let base = "/auth"
 
-function parse_response(r) {
+async function parse_response(r) {
     if(!r.ok) {
         if(r.status === 401 || r.status === 403) {
             if(confirm(`${r.statusText}. Redirect to login page?`)) {
                 location.reload();
             }
         }
+        if(r.status === 409) {
+            let data = {
+                code: 0,
+                reason: "unspecified",
+            }
+            try{
+                data = await r.json();
+            } catch(e) {};
+            if(data.code) {
+                throw new Error(r.status + "|" + data.code + " " + data.reason);
+            }
+            throw new Error(r.status + " " + data.reason);
+        }
         throw new Error(r.status + " " + r.statusText);
     }
-    return r.json();
+    return await r.json();
 }
 
 async function method_get_users() {
@@ -48,6 +61,12 @@ async function method_edit_role(id, description) {
     }).then(parse_response);
 }
 
+async function method_delete_role(id) {
+    return await fetch(`${base}/adm/role/${id}`, {
+        method: "DELETE",
+    }).then(parse_response);
+}
+
 async function method_create_role(description) {
     return await fetch(`${base}/adm/role`, {
         method: "PUT",
@@ -56,6 +75,10 @@ async function method_create_role(description) {
         },
         body: JSON.stringify(description),
     }).then(parse_response);
+}
+
+async function method_get_role_users(id) {
+    return await fetch(`${base}/adm/role/${id}/users`, { cache: "no-store" }).then(parse_response);
 }
 
 async function method_get_role_permissions(id) {
@@ -80,6 +103,10 @@ async function method_get_permission(id) {
     return await fetch(`${base}/adm/permission/${id}`, { cache: "no-store" }).then(parse_response);
 }
 
+async function method_get_permission_roles(id) {
+    return await fetch(`${base}/adm/permission/${id}/roles`, { cache: "no-store" }).then(parse_response);
+}
+
 async function method_edit_permission(id, permission) {
     return await fetch(`${base}/adm/permission/${id}`, {
         method: "POST",
@@ -87,6 +114,12 @@ async function method_edit_permission(id, permission) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(permission),
+    }).then(parse_response);
+}
+
+async function method_delete_permission(id) {
+    return await fetch(`${base}/adm/permission/${id}`, {
+        method: "DELETE",
     }).then(parse_response);
 }
 
@@ -115,6 +148,7 @@ let validator = /^[A-Za-z0-9_-]{1,30}$/;
 let dialog = document.querySelector("dialog");
 let cached_roles = {};
 let cached_perms = {};
+let cached_users = {};
 let Self = null;
 
 class Permission {
@@ -139,24 +173,88 @@ class Permission {
         dialog.className = "";
         dialog.classList.add("permission");
         dialog.innerHTML=`
-            <span class=name>${this.name}</span>
+            <input type="text" name="name" placeholder="Name">
             <input type="text" name="description" placeholder="Description">
-            <button class="save">Save</button><button class="cancel">Cancel</button>
+            <div class="roles"></div>
+            <button class="update">Update</button>
+            <button class="delete">Delete</button>
+            <button class="cancel">Cancel</button>
         `;
-        let input = dialog.querySelector("input[name=description]");
-        input.value = this.description;
+        let name_input = dialog.querySelector("input[name=name]");
+        let descr_input = dialog.querySelector("input[name=description]");
+        name_input.value = this.name;
+        descr_input.value = this.description;
         let T = this;
-        dialog.querySelector("button.save").addEventListener("click", ev=>{
-            dialog.close();
-            T.set_description(input.value.trim()).then(t=>{
-                fill_permissions()
+        T.get_roles().then(roles=>{
+            let role_container = dialog.querySelector(".roles");
+            role_container.innerHTML = '';
+            for(let role of roles) {
+                let el = document.createElement("div");
+                el.classList.add("permission-role");
+                el.innerHTML = `
+                    ${role.html_repr()}
+                    <input class="permission-role-add" type=checkbox name=permission_role_${role.id} value=${role.id} data-id=${role.id} checked>
+                `;
+                role_container.appendChild(el);
+            }
+        }).catch(console.error);
+        dialog.querySelector("button.update").addEventListener("click", ev=>{
+            let new_name = name_input.value.trim();
+            let new_desc = descr_input.value.trim();
+            let promises = [];
+            if(T.name != new_name || T.description != new_desc) {
+                if(!validator.test(new_name)) {
+                    alert("Name validation failed");
+                    return;
+                }
+                T.name = new_name;
+                T.description = new_desc;
+                promises.push(T._save_self());
+            }
+            for(let role_el of dialog.querySelectorAll(".roles input.permission-role-add:not(:checked)")) {
+                let role = cached_roles[parseInt(role_el.dataset.id)];
+                if(role)
+                    promises.push(role.remove_permission(T.id));
+            }
+            Promise.all(promises).then(()=>{
+                T.edit();
             }).catch(console.error);
+        });
+        dialog.querySelector("button.delete").addEventListener("click", ev=>{
+            T.delete().then(()=>{
+                dialog.close();
+                fill_permissions()
+            }).catch(e=>{
+                if(e.message.startsWith("409|787")) {
+                    alert(e.message);
+                } else {
+                    console.log(e);
+                }
+            });
         });
         dialog.querySelector("button.cancel").addEventListener("click", ev=>{
             dialog.close();
+            fill_permissions()
         });
         if(!dialog.open)
             dialog.showModal();
+    }
+    async get_roles() {
+        let roles_raw = await method_get_permission_roles(this.id);
+        let ret = [];
+        for(let role_raw of roles_raw.roles) {
+            let role = cached_roles[role_raw.id];
+            if(role) {
+                ret.push(role);
+            }
+        }
+        return ret;
+    }
+    async delete() {
+        let result = await method_delete_permission(this.id);
+        if(result.success) {
+            delete cached_perms[this.name];
+        }
     }
     async _save_self() {
         let data = await method_edit_permission(this.id, {
@@ -237,6 +335,13 @@ class Role{
             <input type="text" name="permission_filter" placeholder="search...">
             <div class="permissions"></div>
             <button class="save">Update</button>
+            <button class="delete">Delete</button>
+            <button class="users">Users</button>
+            <dialog class="sub-dialog">
+                <div class="sub-container"></div>
+                <button class="sub-update">Update</button>
+                <button class="sub-close">Close</button>
+            </dialog>
             <button class="close">Close</button>
         `;
         let name_input = dialog.querySelector("input[name=name]");
@@ -315,8 +420,90 @@ class Role{
         dialog.querySelector("button.close").addEventListener("click", ev=>{
             dialog.close();
         });
+        async function show_role_users() {
+            let users_dlg = dialog.querySelector(".sub-dialog");
+            let container = users_dlg.querySelector(".sub-container");
+            let users = await T.get_users();
+
+            let promises = [];
+            for(let user of users) {
+                if(!user.shareable) {
+                    promises.push(user.get_roles());
+                }
+            }
+            if(promises.length > 0) 
+                await Promise.all(promises);
+            
+            container.innerHTML = "";
+            for(let user of users) {
+                let el = document.createElement("div");
+                el.classList.add('role-user');
+                let share_checked = T.id in user.shareable ? "checked" : "";
+                el.innerHTML = `
+                    ${user.html_repr()}
+                    <input type=checkbox title="User has this role" data-id=${user.id} class=role_sub_user_add name=user_role_${user.id} value=${user.id} checked>
+                    <input type=checkbox title="User can share this role" data-id=${user.id} class=role_sub_user_share name=user_role_${user.id}_share value=${user.id} ${share_checked}>
+                `;
+                container.appendChild(el);
+            }
+            users_dlg.querySelector("button.sub-close").addEventListener("click", ()=>{
+                users_dlg.close();
+            });
+            users_dlg.querySelector("button.sub-update").addEventListener("click", ()=>{
+                let users = container.querySelectorAll("input.role_sub_user_add");
+                let promises = [];
+                for(let el of users) {
+                    let user = cached_users[parseInt(el.dataset.id)];
+                    let checked = el.checked;
+                    let shareable = !!(container.querySelector(`input.role_sub_user_share[data-id="${user.id}"]:checked`));
+                    if(user) {
+                        if(!checked) {
+                            promises.push(user.remove_role(T.name));
+                        } else if(shareable != (T.id in user.shareable)) {
+                            promises.push(user.add_role(T.name, shareable));
+                        }
+                    }
+                }
+                if(promises.length > 0) {
+                    Promise.all(promises).then(()=>show_role_users()).catch(console.error);
+                }
+            });
+            if(!users_dlg.open)
+                users_dlg.showModal();
+        }
+        dialog.querySelector("button.users").addEventListener("click", ev=>{
+            show_role_users().catch(console.error);
+        });
+        dialog.querySelector("button.delete").addEventListener("click", ev=>{
+            T.delete().then(()=>{
+                dialog.close();
+                fill_roles()
+            }).catch(e=>{
+                if(e.message.startsWith("409|787")) {
+                    alert(e.message);
+                } else {
+                    console.log(e);
+                }
+            });
+        });
         if(!dialog.open)
             dialog.showModal();
+    }
+    async get_users() {
+        let users_raw = await method_get_role_users(this.id);
+        let ret = [];
+        for(let user_raw of users_raw.users) {
+            let user = cached_users[user_raw.id];
+            if(!user) continue;
+            ret.push(user);
+        }
+        return ret;
+    }
+    async delete() {
+        let result = await method_delete_role(this.id);
+        if(result.success) {
+            delete cached_roles[this.id];
+        }
     }
     async _save_self() {
         let role_raw = await method_edit_role(this.id, {
@@ -371,11 +558,11 @@ Role.create = async function create_role(name, description){
         description: description,
         id: -1,
     });
-    return Role(role_raw);
+    return new Role(role_raw);
 }
 Role.get = async function get_role(id){
     let role_raw = await method_get_role(id);
-    return Role(role_raw);
+    return new Role(role_raw);
 }
 Role.get_all = async function get_roles() {
     let roles_raw = await method_get_roles();
@@ -475,9 +662,9 @@ class User{
                 el.innerHTML = `
                     <label>
                         ${role.html_repr()}
-                        <input ${disabled} ${checked_role} type=checkbox data-role=${role.id} class="role_add" name=role_add_${role.id}>
+                        <input ${disabled} ${checked_role} type=checkbox title="User has this role" data-role=${role.id} class="role_add" name=role_add_${role.id}>
                     </label>
-                    <input ${disabled} ${shareable_role} type=checkbox data-role=${role.id} class="role_share" name=role_share_${role.id}>
+                    <input ${disabled} ${shareable_role} type=checkbox title="User can share this role" data-role=${role.id} class="role_share" name=role_share_${role.id}>
                 `;
                 roles_container.appendChild(el);
             }
@@ -600,7 +787,9 @@ async function fill_users() {
     let users = await User.get_all();
     let container = document.querySelector("#menu_btn_users+div");
     container.innerHTML="";
+    cached_users = {};
     for(let user of users) {
+        cached_users[user.id] = user;
         let user_el = document.createElement("div");
         user_el.classList.add("user");
         user_el.addEventListener("click", user.edit.bind(user));
